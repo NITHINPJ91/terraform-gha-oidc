@@ -25,23 +25,17 @@ jobs:
       - name: Detect New Folder
         id: detect
         run: |
-          CURRENT_FOLDERS=$(git ls-tree -d --name-only HEAD | grep -v '^\.')
-
           if git rev-parse --verify HEAD~1 >/dev/null 2>&1; then
-            PREVIOUS_FOLDERS=$(git ls-tree -d --name-only HEAD~1 | grep -v '^\.')
-            NEW_FOLDER=$(comm -23 <(echo "$CURRENT_FOLDERS" | sort) <(echo "$PREVIOUS_FOLDERS" | sort) | head -1)
-            if [ -z "$NEW_FOLDER" ]; then
-              NEW_FOLDER=$(git diff --name-only --diff-filter=A HEAD~1 HEAD | cut -d'/' -f1 | sort -u | grep -v '^\.' | head -1)
-            fi
+            NEW_FOLDER=$(git diff --name-only --diff-filter=A HEAD~1 HEAD | cut -d'/' -f1-2 | sort -u | grep -v '^\.' | head -1)
           else
-            NEW_FOLDER=$(echo "$CURRENT_FOLDERS" | head -1)
+            NEW_FOLDER=$(git ls-tree -r --name-only HEAD | cut -d'/' -f1-2 | sort -u | grep -v '^\.' | head -1)
           fi
-          
+
           if [ -z "$NEW_FOLDER" ]; then
             echo "No new folder detected"
             exit 1
           fi
-          
+
           echo "folder=$NEW_FOLDER" >> $GITHUB_OUTPUT
           echo "Detected new folder: $NEW_FOLDER"
 
