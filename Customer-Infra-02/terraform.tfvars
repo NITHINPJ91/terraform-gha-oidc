@@ -1,2 +1,2 @@
-resource_group_name = "infra-01-rg"
+resource_group_name = "infra-02-rg"
 location            = "East US"
