@@ -25,24 +25,15 @@ jobs:
       - name: Detect New Folder
         id: detect
         run: |
-          # Detect truly new folders or recreated folders (deleted and recreated with same name)
-          # Get list of top-level folders in current commit
           CURRENT_FOLDERS=$(git ls-tree -d --name-only HEAD | grep -v '^\.')
-          
-          # Get list of top-level folders in previous commit (if it exists)
+
           if git rev-parse --verify HEAD~1 >/dev/null 2>&1; then
             PREVIOUS_FOLDERS=$(git ls-tree -d --name-only HEAD~1 | grep -v '^\.')
-            
-            # Find folders that exist now but didn't exist before (truly new or recreated)
             NEW_FOLDER=$(comm -23 <(echo "$CURRENT_FOLDERS" | sort) <(echo "$PREVIOUS_FOLDERS" | sort) | head -1)
-            
-            # If no new folder found, check for folders with new files added (recreated folders)
             if [ -z "$NEW_FOLDER" ]; then
-              # Get folders that have new files added
               NEW_FOLDER=$(git diff --name-only --diff-filter=A HEAD~1 HEAD | cut -d'/' -f1 | sort -u | grep -v '^\.' | head -1)
             fi
           else
-            # First commit - use first folder found
             NEW_FOLDER=$(echo "$CURRENT_FOLDERS" | head -1)
           fi
           
@@ -66,9 +57,6 @@ jobs:
 
       - name: Print Working Directory
         run: |
-          echo "=========================================="
-          echo "Selected Working Directory: ${{ needs.detect-folder.outputs.folder }}"
-          echo "=========================================="
           echo "Current directory: $(pwd)"
           echo "Working directory will be: ${{ needs.detect-folder.outputs.folder }}"
 
