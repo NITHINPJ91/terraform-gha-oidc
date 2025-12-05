@@ -25,27 +25,20 @@ jobs:
       - name: Detect New Folder
         id: detect
         run: |
-          # Detect truly new folders or recreated folders (deleted and recreated with same name)
-          # Get list of top-level folders in current commit
+          # Get current folders
           CURRENT_FOLDERS=$(git ls-tree -d --name-only HEAD | grep -v '^\.')
           
-          # Get list of top-level folders in previous commit (if it exists)
+          # Check if previous commit exists
           if git rev-parse --verify HEAD~1 >/dev/null 2>&1; then
+            # Get previous folders and find new ones
             PREVIOUS_FOLDERS=$(git ls-tree -d --name-only HEAD~1 | grep -v '^\.')
-            
-            # Find folders that exist now but didn't exist before (truly new or recreated)
             NEW_FOLDER=$(comm -23 <(echo "$CURRENT_FOLDERS" | sort) <(echo "$PREVIOUS_FOLDERS" | sort) | head -1)
-            
-            # If no new folder found, check for folders with new files added (recreated folders)
-            if [ -z "$NEW_FOLDER" ]; then
-              # Get folders that have new files added
-              NEW_FOLDER=$(git diff --name-only --diff-filter=A HEAD~1 HEAD | cut -d'/' -f1 | sort -u | grep -v '^\.' | head -1)
-            fi
           else
-            # First commit - use first folder found
+            # First commit - use first folder
             NEW_FOLDER=$(echo "$CURRENT_FOLDERS" | head -1)
           fi
           
+          # Validate and output
           if [ -z "$NEW_FOLDER" ]; then
             echo "No new folder detected"
             exit 1
