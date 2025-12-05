@@ -4,6 +4,6 @@ terraform {
     resource_group_name  = "terraform-automation-rg"
     storage_account_name = "automationsample"
     container_name       = "tfstate"
-    key                  = "Infra-01.tfstate"
+    key                  = "Infra-02.tfstate"
   }
 }
