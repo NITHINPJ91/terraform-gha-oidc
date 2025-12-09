@@ -21,7 +21,7 @@ jobs:
       - name: Display the current branch
         run: |
           git branch
-          git checkout main
+          git checkout test_branch_01
           git branch
           ls -la
 

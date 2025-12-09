@@ -1,9 +1,9 @@
 name: Infra Deployment Pipeline
 
 on:
-  # push:
-  #   branches:
-  #     - test_branch_01
+  push:
+    branches:
+      - test_branch_01
   workflow_dispatch:
 
 permissions:
@@ -97,14 +97,14 @@ jobs:
         if: steps.plan.outcome == 'failure'
         run: exit 1
 
-      - name: Await Manual Approval
-        uses: trstringer/manual-approval@v1
-        with:
-          secret: ${{ secrets.GITHUB_TOKEN }}
-          approvers: NITHINPJ91
-          minimum-approvals: 1
-          issue-title: "Manual Approval Required for Terraform Apply"
-          issue-body: "Please approve or deny the deployment. Review the terraform plan output above before approving."
+      # - name: Await Manual Approval
+      #   uses: trstringer/manual-approval@v1
+      #   with:
+      #     secret: ${{ secrets.GITHUB_TOKEN }}
+      #     approvers: NITHINPJ91
+      #     minimum-approvals: 1
+      #     issue-title: "Manual Approval Required for Terraform Apply"
+      #     issue-body: "Please approve or deny the deployment. Review the terraform plan output above before approving."
 
       - name: Terraform Apply
         id: apply
