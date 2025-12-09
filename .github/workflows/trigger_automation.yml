@@ -7,6 +7,10 @@ on:
         description: 'Branch name to create'
         required: true
         type: string
+      target_folder_name:
+        description: 'Target folder name (e.g., Customer-Infra-01)'
+        required: true
+        type: string
 
 jobs:
   create-and-merge-branch:
@@ -36,11 +40,36 @@ jobs:
           echo "NEW_BRANCH=${NEW_BRANCH}" >> $GITHUB_ENV
           git checkout -b "${NEW_BRANCH}"
 
+      - name: Copy template to target folder
+        run: |
+          TARGET_FOLDER="${{ github.event.inputs.target_folder_name }}"
+          SOURCE_DIR="new_customer/Customer-Infra-Template"
+          TARGET_DIR="new_customer/${TARGET_FOLDER}"
+          
+          # Validate source exists
+          if [ ! -d "${SOURCE_DIR}" ]; then
+            echo "❌ Source directory ${SOURCE_DIR} does not exist"
+            exit 1
+          fi
+          
+          # Check if target already exists
+          if [ -d "${TARGET_DIR}" ]; then
+            echo "⚠️ Target directory ${TARGET_DIR} already exists"
+            exit 1
+          fi
+          
+          # Copy template to new folder
+          cp -r "${SOURCE_DIR}" "${TARGET_DIR}"
+          echo "✅ Copied ${SOURCE_DIR} to ${TARGET_DIR}"
+          
+          # Store in environment for later steps
+          echo "TARGET_FOLDER=${TARGET_FOLDER}" >> $GITHUB_ENV
+          echo "TARGET_DIR=${TARGET_DIR}" >> $GITHUB_ENV
+
       - name: Make changes
         run: |
-          echo "This is a test change" >> change.txt
-          git add change.txt
-          git commit -m "Add test change to $NEW_BRANCH"
+          git add "${TARGET_DIR}"
+          git commit -m "Add new folder ${TARGET_FOLDER} to $NEW_BRANCH"
 
       - name: Push new branch
         run: git push -u origin $NEW_BRANCH
