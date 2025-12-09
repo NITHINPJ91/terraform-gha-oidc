@@ -1,0 +1,53 @@
+name: Trigger Automation Pipeline
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch_name:
+        description: 'Branch name to create'
+        required: true
+        type: string
+
+jobs:
+  create-and-merge-branch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GH_PAT }}
+
+      - name: Display the current branch
+        run: |
+          git branch
+          git checkout main
+          git branch
+          ls -la
+
+      - name: Set up Git
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Create new branch
+        run: |
+          NEW_BRANCH="${{ github.event.inputs.branch_name }}"
+          echo "NEW_BRANCH=${NEW_BRANCH}" >> $GITHUB_ENV
+          git checkout -b "${NEW_BRANCH}"
+
+      - name: Make changes
+        run: |
+          echo "This is a test change" >> change.txt
+          git add change.txt
+          git commit -m "Add test change to $NEW_BRANCH"
+
+      - name: Push new branch
+        run: git push -u origin $NEW_BRANCH
+
+      - name: Merge into test_branch_01 branch
+        run: |
+          git checkout test_branch_01
+          git pull origin test_branch_01
+          git merge --no-ff $NEW_BRANCH -m "Merge $NEW_BRANCH into test_branch_01"
+          git push origin test_branch_01

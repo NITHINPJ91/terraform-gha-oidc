@@ -1,0 +1,117 @@
+name: Infra Deployment Pipeline
+
+on:
+  # push:
+  #   branches:
+  #     - test_branch_01
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+  issues: write
+
+jobs:
+  detect-folder:
+    runs-on: ubuntu-latest
+    outputs:
+      folder: ${{ steps.detect.outputs.folder }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 2
+
+      - name: Detect New Folder
+        id: detect
+        run: |
+          if git rev-parse --verify HEAD~1 >/dev/null 2>&1; then
+            NEW_FOLDER=$(git diff --name-only --diff-filter=A HEAD~1 HEAD | cut -d'/' -f1-2 | sort -u | grep -v '^\.' | head -1)
+          else
+            NEW_FOLDER=$(git ls-tree -r --name-only HEAD | cut -d'/' -f1-2 | sort -u | grep -v '^\.' | head -1)
+          fi
+
+          if [ -z "$NEW_FOLDER" ]; then
+            echo "No new folder detected"
+            exit 1
+          fi
+
+          echo "folder=$NEW_FOLDER" >> $GITHUB_OUTPUT
+          echo "Detected new folder: $NEW_FOLDER"
+
+  infra-deployment:
+    needs: detect-folder
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: ${{ needs.detect-folder.outputs.folder }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Print Working Directory
+        run: |
+          echo "Current directory: $(pwd)"
+          echo "Working directory will be: ${{ needs.detect-folder.outputs.folder }}"
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3  
+        with:
+          terraform_version: 1.5.7
+
+      # - name: 'Az CLI login'
+      #   uses: azure/login@v2
+      #   with:
+      #     client-id: ${{ secrets.AZURE_CLIENT_ID }}
+      #     tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+      #     subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      # - name: 'Run az commands'
+      #   run: |
+      #     az account show
+      #     az group list
+
+      - name: Terraform Init
+        id: init
+        env:
+          ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          ARM_USE_OIDC: "true"
+          ARM_USE_AZUREAD: "true"
+        run: terraform init
+
+      - name: Terraform Plan
+        id: plan
+        env:
+          ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          ARM_USE_OIDC: "true"
+          ARM_USE_AZUREAD: "true"
+        run: terraform plan -out=tfplan -no-color
+        continue-on-error: true
+
+      - name: Terraform Plan Status
+        id: plan_status
+        if: steps.plan.outcome == 'failure'
+        run: exit 1
+
+      - name: Await Manual Approval
+        uses: trstringer/manual-approval@v1
+        with:
+          secret: ${{ secrets.GITHUB_TOKEN }}
+          approvers: NITHINPJ91
+          minimum-approvals: 1
+          issue-title: "Manual Approval Required for Terraform Apply"
+          issue-body: "Please approve or deny the deployment. Review the terraform plan output above before approving."
+
+      - name: Terraform Apply
+        id: apply
+        env:
+          ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          ARM_USE_OIDC: "true"
+          ARM_USE_AZUREAD: "true"
+        run: terraform apply tfplan
