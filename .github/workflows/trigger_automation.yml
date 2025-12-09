@@ -22,23 +22,28 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.GH_PAT }}
 
-      - name: Display the current branch
+      - name: Checkout test_branch_01
         run: |
-          git branch
-          git checkout test_branch_01
-          git branch
-          ls -la
+          git fetch origin --quiet
+          git checkout test_branch_01 2>/dev/null || git checkout -b test_branch_01 origin/test_branch_01
+          git pull origin test_branch_01 --quiet
+          echo "Checked out and updated test_branch_01"
 
       - name: Set up Git
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Create new branch
+      - name: Create or checkout branch
         run: |
           NEW_BRANCH="${{ github.event.inputs.branch_name }}"
           echo "NEW_BRANCH=${NEW_BRANCH}" >> $GITHUB_ENV
+          git fetch origin --quiet
+          git checkout ${NEW_BRANCH} 2>/dev/null || \
+          git checkout -b ${NEW_BRANCH} origin/${NEW_BRANCH} 2>/dev/null || \
           git checkout -b "${NEW_BRANCH}"
+          git pull origin ${NEW_BRANCH} 2>/dev/null || true
+          echo "On branch: ${NEW_BRANCH}"
 
       - name: Copy template to target folder
         run: |
@@ -46,23 +51,18 @@ jobs:
           SOURCE_DIR="new_customer/Customer-Infra-Template"
           TARGET_DIR="new_customer/${TARGET_FOLDER}"
           
-          # Validate source exists
           if [ ! -d "${SOURCE_DIR}" ]; then
-            echo "❌ Source directory ${SOURCE_DIR} does not exist"
+            echo "Source directory ${SOURCE_DIR} does not exist"
             exit 1
           fi
           
-          # Check if target already exists
           if [ -d "${TARGET_DIR}" ]; then
-            echo "⚠️ Target directory ${TARGET_DIR} already exists"
+            echo "Target directory ${TARGET_DIR} already exists"
             exit 1
           fi
           
-          # Copy template to new folder
           cp -r "${SOURCE_DIR}" "${TARGET_DIR}"
-          echo "✅ Copied ${SOURCE_DIR} to ${TARGET_DIR}"
-          
-          # Store in environment for later steps
+          echo "Copied ${SOURCE_DIR} to ${TARGET_DIR}"
           echo "TARGET_FOLDER=${TARGET_FOLDER}" >> $GITHUB_ENV
           echo "TARGET_DIR=${TARGET_DIR}" >> $GITHUB_ENV
 
