@@ -16,6 +16,11 @@ on:
         required: true
         type: string
 
+permissions:
+  id-token: write
+  contents: read
+  issues: write
+
 jobs:
   destroy-customer-infra:
     runs-on: ubuntu-latest
@@ -135,5 +140,5 @@ jobs:
         run: |
           git checkout test_branch_01
           git pull origin test_branch_01
-          git merge --no-ff $NEW_BRANCH -m "Merge $NEW_BRANCH into test_branch_01"
+          git merge --no-ff $NEW_BRANCH -m "Merge $NEW_BRANCH into test_branch_01 [skip ci]"
           git push origin test_branch_01
