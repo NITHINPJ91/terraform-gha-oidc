@@ -1,0 +1,139 @@
+name: Trigger Automation Destroy Pipeline
+
+on:
+  workflow_dispatch:
+    inputs:
+      branch_name:
+        description: 'Branch name to create'
+        required: true
+        type: string
+      target_base_folder_name:
+        description: 'Target base folder name (e.g., new_customer)'
+        required: true
+        type: string
+      target_folder_name:
+        description: 'Target folder name (e.g., Customer-Infra-01, Customer-Infra-02)'
+        required: true
+        type: string
+
+jobs:
+  destroy-customer-infra:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GH_PAT }}
+
+      - name: Checkout test_branch_01
+        run: |
+          git fetch origin --quiet
+          git checkout test_branch_01 2>/dev/null || git checkout -b test_branch_01 origin/test_branch_01
+          git pull origin test_branch_01 --quiet
+          echo "Checked out and updated test_branch_01"
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3  
+        with:
+          terraform_version: 1.5.7
+
+      # - name: 'Az CLI login'
+      #   uses: azure/login@v2
+      #   with:
+      #     client-id: ${{ secrets.AZURE_CLIENT_ID }}
+      #     tenant-id: ${{ secrets.AZURE_TENANT_ID }}
+      #     subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+
+      # - name: 'Run az commands'
+      #   run: |
+      #     az account show
+      #     az group list
+
+      - name: Terraform Init
+        id: init
+        working-directory: ${{ github.event.inputs.target_base_folder_name }}/${{ github.event.inputs.target_folder_name }}
+        env:
+          ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          ARM_USE_OIDC: "true"
+          ARM_USE_AZUREAD: "true"
+        run: terraform init
+
+      - name: Terraform Plan Destroy
+        id: destroy_plan
+        working-directory: ${{ github.event.inputs.target_base_folder_name }}/${{ github.event.inputs.target_folder_name }}
+        env:
+          ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          ARM_USE_OIDC: "true"
+          ARM_USE_AZUREAD: "true"
+        run: terraform plan -destroy
+        continue-on-error: true
+
+      - name: Terraform Plan Status
+        working-directory: ${{ github.event.inputs.target_base_folder_name }}/${{ github.event.inputs.target_folder_name }}
+        id: destroy_status
+        if: steps.destroy_plan.outcome == 'failure'
+        run: exit 1
+
+      # - name: Await Manual Approval
+      #   uses: trstringer/manual-approval@v1
+      #   with:
+      #     secret: ${{ secrets.GITHUB_TOKEN }}
+      #     approvers: NITHINPJ91
+      #     minimum-approvals: 1
+      #     issue-title: "Manual Approval Required for Terraform Apply"
+      #     issue-body: "Please approve or deny the deployment. Review the terraform plan output above before approving."
+
+      - name: Terraform Destroy
+        id: destroy
+        working-directory: ${{ github.event.inputs.target_base_folder_name }}/${{ github.event.inputs.target_folder_name }}
+        env:
+          ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          ARM_USE_OIDC: "true"
+          ARM_USE_AZUREAD: "true"
+        run: terraform destroy -auto-approve
+
+      - name: Set up Git
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Create or checkout branch
+        run: |
+          NEW_BRANCH="${{ github.event.inputs.branch_name }}"
+          echo "NEW_BRANCH=${NEW_BRANCH}" >> $GITHUB_ENV
+          git fetch origin --quiet
+          git checkout ${NEW_BRANCH} 2>/dev/null || \
+          git checkout -b ${NEW_BRANCH} origin/${NEW_BRANCH} 2>/dev/null || \
+          git checkout -b "${NEW_BRANCH}"
+          git pull origin ${NEW_BRANCH} 2>/dev/null || true
+          echo "On branch: ${NEW_BRANCH}"
+
+      - name: Make changes
+        run: |
+          TARGET_DIR="${{ github.event.inputs.target_base_folder_name }}/${{ github.event.inputs.target_folder_name }}"
+
+          if [ -d "${TARGET_DIR}" ]; then
+            git rm -r "${TARGET_DIR}"
+            git commit -m "Remove folder ${TARGET_DIR} after destroy"
+            echo "Removed folder ${TARGET_DIR} from repository"
+          else
+            echo "Folder ${TARGET_DIR} does not exist in repository"
+            exit 1
+          fi
+
+      - name: Push new branch
+        run: git push -u origin $NEW_BRANCH
+
+      - name: Merge into test_branch_01 branch
+        run: |
+          git checkout test_branch_01
+          git pull origin test_branch_01
+          git merge --no-ff $NEW_BRANCH -m "Merge $NEW_BRANCH into test_branch_01"
+          git push origin test_branch_01
