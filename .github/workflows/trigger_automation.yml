@@ -11,6 +11,18 @@ on:
         description: 'Target folder name (e.g., Customer-Infra-01)'
         required: true
         type: string
+      resource_group_name:
+        description: 'Resource group name'
+        required: true
+        type: string
+      location:
+        description: 'Azure location (e.g., eastus, westus2)'
+        required: true
+        type: string
+      backend_key:
+        description: 'Backend state key (e.g., Customer-Infra-01.tfstate)'
+        required: true
+        type: string
 
 jobs:
   create-and-merge-branch:
@@ -65,6 +77,19 @@ jobs:
           echo "Copied ${SOURCE_DIR} to ${TARGET_DIR}"
           echo "TARGET_FOLDER=${TARGET_FOLDER}" >> $GITHUB_ENV
           echo "TARGET_DIR=${TARGET_DIR}" >> $GITHUB_ENV
+
+      - name: Update terraform.tfvars and backend.tf
+        run: |
+          TFVARS_FILE="${TARGET_DIR}/terraform.tfvars"
+          BACKEND_FILE="${TARGET_DIR}/backend.tf"
+          sed -i "s/resource_group_name[[:space:]]*=[[:space:]]*\"\"/resource_group_name = \"${{ github.event.inputs.resource_group_name }}\"/" "${TFVARS_FILE}"
+          sed -i "s/location[[:space:]]*=[[:space:]]*\"\"/location = \"${{ github.event.inputs.location }}\"/" "${TFVARS_FILE}"
+          sed -i "s/key[[:space:]]*=[[:space:]]*\"\"/key = \"${{ github.event.inputs.backend_key }}\"/" "${BACKEND_FILE}"   
+          echo "Updated terraform.tfvars with:"
+          echo "resource_group_name = \"${{ github.event.inputs.resource_group_name }}\""
+          echo "location = \"${{ github.event.inputs.location }}\""
+          echo "Updated backend.tf with:"
+          echo "key = \"${{ github.event.inputs.backend_key }}\""
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3
