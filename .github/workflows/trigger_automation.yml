@@ -66,6 +66,16 @@ jobs:
           echo "TARGET_FOLDER=${TARGET_FOLDER}" >> $GITHUB_ENV
           echo "TARGET_DIR=${TARGET_DIR}" >> $GITHUB_ENV
 
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: 1.5.7
+
+      - name: Format Terraform files
+        run: |
+          terraform fmt -recursive "${TARGET_DIR}"
+          echo "Formatted Terraform files in ${TARGET_DIR}"
+
       - name: Make changes
         run: |
           git add "${TARGET_DIR}"
