@@ -8,19 +8,19 @@ on:
         required: true
         type: string
       target_folder_name:
-        description: 'Target folder name (e.g., Customer-Infra-01)'
+        description: 'Target folder name (e.g., Customer-Infra-01, Customer-Infra-02)'
         required: true
         type: string
       resource_group_name:
-        description: 'Resource group name'
+        description: 'Resource group name (e.g., infra-01-rg, infra-02-rg)'
         required: true
         type: string
       location:
-        description: 'Azure location (e.g., eastus, westus2)'
+        description: 'Azure location (e.g., East US, UK South)'
         required: true
         type: string
       backend_key:
-        description: 'Backend state key (e.g., Customer-Infra-01.tfstate)'
+        description: 'Backend state key (e.g., Customer-Infra-01.tfstate, Customer-Infra-02.tfstate)'
         required: true
         type: string
 
