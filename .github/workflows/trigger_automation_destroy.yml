@@ -8,7 +8,7 @@ on:
         required: true
         type: string
       target_base_folder_name:
-        description: 'Target base folder name (e.g., new_customer)'
+        description: 'Target base folder name (e.g., new_customer, old_customer)'
         required: true
         type: string
       target_folder_name:
