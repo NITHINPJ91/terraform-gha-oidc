@@ -33,15 +33,16 @@ jobs:
           fi
 
           if [ -z "$NEW_FOLDER" ]; then
+            echo "folder=" >> $GITHUB_OUTPUT
             echo "No new folder detected"
-            exit 1
+          else
+            echo "folder=$NEW_FOLDER" >> $GITHUB_OUTPUT
+            echo "Detected new folder: $NEW_FOLDER"
           fi
-
-          echo "folder=$NEW_FOLDER" >> $GITHUB_OUTPUT
-          echo "Detected new folder: $NEW_FOLDER"
 
   infra-deployment:
     needs: detect-folder
+    if: needs.detect-folder.outputs.folder != ''
     runs-on: ubuntu-latest
     defaults:
       run:
