@@ -39,17 +39,25 @@ jobs:
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
 
-      - name: Create or checkout branch
+      - name: Create new branch
         run: |
           git branch
           NEW_BRANCH="${{ github.event.inputs.branch_name }}"
           echo "NEW_BRANCH=${NEW_BRANCH}" >> $GITHUB_ENV
           git fetch origin --quiet
-          git checkout ${NEW_BRANCH} 2>/dev/null || \
-          git checkout -b ${NEW_BRANCH} origin/${NEW_BRANCH} 2>/dev/null || \
+          
+          if git show-ref --verify --quiet refs/heads/${NEW_BRANCH}; then
+            echo "Error: Branch '${NEW_BRANCH}' already exists locally"
+            exit 1
+          fi
+          
+          if git ls-remote --heads origin ${NEW_BRANCH} | grep -q ${NEW_BRANCH}; then
+            echo "Error: Branch '${NEW_BRANCH}' already exists on remote (origin)"
+            exit 1
+          fi
+          
           git checkout -b "${NEW_BRANCH}"
-          git pull origin ${NEW_BRANCH} 2>/dev/null || true
-          echo "On branch: ${NEW_BRANCH}"
+          echo "Created new branch: ${NEW_BRANCH}"
           git branch
 
       - name: Copy template to target folder
@@ -110,3 +118,22 @@ jobs:
           git pull origin test_branch_01
           git merge --no-ff $NEW_BRANCH -m "Merge $NEW_BRANCH into test_branch_01"
           git push origin test_branch_01
+
+      - name: Delete branch locally and remotely
+        run: |
+          if git show-ref --verify --quiet refs/heads/$NEW_BRANCH; then
+            git branch -d $NEW_BRANCH 2>/dev/null || git branch -D $NEW_BRANCH
+            echo "Deleted local branch: $NEW_BRANCH"
+          else
+            echo "Local branch $NEW_BRANCH does not exist (already deleted)"
+          fi
+          
+          if git ls-remote --heads origin $NEW_BRANCH | grep -q $NEW_BRANCH; then
+            git push origin --delete $NEW_BRANCH
+            echo "Deleted remote branch: $NEW_BRANCH"
+          else
+            echo "Remote branch $NEW_BRANCH does not exist (already deleted)"
+          fi
+          
+          git fetch --prune origin --quiet
+          echo "Cleaned up stale remote tracking branches"
