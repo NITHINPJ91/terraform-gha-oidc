@@ -91,7 +91,11 @@ jobs:
           ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
           ARM_USE_OIDC: "true"
           ARM_USE_AZUREAD: "true"
-        run: terraform plan -out=tfplan -no-color
+        # run: terraform plan -out=tfplan -no-color
+        run: |
+          terraform plan -out=tfplan -no-color
+          echo "List all files and directories recursively in the current location"
+          ls -laR
         continue-on-error: true
 
       - name: Terraform Plan Status
