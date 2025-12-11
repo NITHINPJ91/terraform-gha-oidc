@@ -34,13 +34,6 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.GH_PAT }}
 
-      - name: Checkout test_branch_01
-        run: |
-          git fetch origin --quiet
-          git checkout test_branch_01 2>/dev/null || git checkout -b test_branch_01 origin/test_branch_01
-          git pull origin test_branch_01 --quiet
-          echo "Checked out and updated test_branch_01"
-
       - name: Set up Git
         run: |
           git config --global user.name "github-actions[bot]"
@@ -48,6 +41,7 @@ jobs:
 
       - name: Create or checkout branch
         run: |
+          git branch
           NEW_BRANCH="${{ github.event.inputs.branch_name }}"
           echo "NEW_BRANCH=${NEW_BRANCH}" >> $GITHUB_ENV
           git fetch origin --quiet
@@ -56,6 +50,7 @@ jobs:
           git checkout -b "${NEW_BRANCH}"
           git pull origin ${NEW_BRANCH} 2>/dev/null || true
           echo "On branch: ${NEW_BRANCH}"
+          git branch
 
       - name: Copy template to target folder
         run: |

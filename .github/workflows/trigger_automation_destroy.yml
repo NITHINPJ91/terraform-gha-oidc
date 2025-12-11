@@ -31,29 +31,21 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.GH_PAT }}
 
-      - name: Checkout test_branch_01
+      - name: Check if target directory exists
+        id: check_dir
         run: |
-          git fetch origin --quiet
-          git checkout test_branch_01 2>/dev/null || git checkout -b test_branch_01 origin/test_branch_01
-          git pull origin test_branch_01 --quiet
-          echo "Checked out and updated test_branch_01"
+          TARGET_DIR="${{ github.event.inputs.target_base_folder_name }}/${{ github.event.inputs.target_folder_name }}"
+          if [ -d "${TARGET_DIR}" ]; then
+            echo "Directory ${TARGET_DIR} exists"
+          else
+            echo "Error: Directory ${TARGET_DIR} does not exist"
+            exit 1
+          fi
 
       - name: Setup Terraform
         uses: hashicorp/setup-terraform@v3  
         with:
           terraform_version: 1.5.7
-
-      # - name: 'Az CLI login'
-      #   uses: azure/login@v2
-      #   with:
-      #     client-id: ${{ secrets.AZURE_CLIENT_ID }}
-      #     tenant-id: ${{ secrets.AZURE_TENANT_ID }}
-      #     subscription-id: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
-
-      # - name: 'Run az commands'
-      #   run: |
-      #     az account show
-      #     az group list
 
       - name: Terraform Init
         id: init
@@ -111,6 +103,7 @@ jobs:
 
       - name: Create or checkout branch
         run: |
+          git branch
           NEW_BRANCH="${{ github.event.inputs.branch_name }}"
           echo "NEW_BRANCH=${NEW_BRANCH}" >> $GITHUB_ENV
           git fetch origin --quiet
@@ -119,19 +112,14 @@ jobs:
           git checkout -b "${NEW_BRANCH}"
           git pull origin ${NEW_BRANCH} 2>/dev/null || true
           echo "On branch: ${NEW_BRANCH}"
+          git branch
 
       - name: Make changes
         run: |
           TARGET_DIR="${{ github.event.inputs.target_base_folder_name }}/${{ github.event.inputs.target_folder_name }}"
-
-          if [ -d "${TARGET_DIR}" ]; then
-            git rm -r "${TARGET_DIR}"
-            git commit -m "Remove folder ${TARGET_DIR} after destroy"
-            echo "Removed folder ${TARGET_DIR} from repository"
-          else
-            echo "Folder ${TARGET_DIR} does not exist in repository"
-            exit 1
-          fi
+          git rm -r "${TARGET_DIR}"
+          git commit -m "Remove folder ${TARGET_DIR} after destroy"
+          echo "Removed folder ${TARGET_DIR} from repository"
 
       - name: Push new branch
         run: git push -u origin $NEW_BRANCH
