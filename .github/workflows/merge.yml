@@ -1,0 +1,34 @@
+name: Trigger Merge Pipeline
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+jobs:
+  merge-main-to-test-branch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.GH_PAT }}
+
+      - name: Set up Git
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Merge main into test_branch_01
+        run: |
+          git checkout main
+          git pull origin main
+          git fetch origin --quiet
+          git branch
+          git checkout test_branch_01
+          git pull origin test_branch_01
+          git branch
+          git merge main
+          git push origin test_branch_01
