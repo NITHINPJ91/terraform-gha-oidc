@@ -41,6 +41,8 @@ jobs:
 
       - name: Create new branch
         run: |
+          git checkout test_branch_01
+          git pull origin test_branch_01
           git branch
           NEW_BRANCH="${{ github.event.inputs.branch_name }}"
           echo "NEW_BRANCH=${NEW_BRANCH}" >> $GITHUB_ENV

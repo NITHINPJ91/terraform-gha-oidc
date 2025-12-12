@@ -31,10 +31,13 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.GH_PAT }}
 
+      - name: Set environment variables
+        run: |
+          echo "TARGET_DIR=${{ github.event.inputs.target_base_folder_name }}/${{ github.event.inputs.target_folder_name }}" >> $GITHUB_ENV
+
       - name: Check if target directory exists
         id: check_dir
         run: |
-          TARGET_DIR="${{ github.event.inputs.target_base_folder_name }}/${{ github.event.inputs.target_folder_name }}"
           if [ -d "${TARGET_DIR}" ]; then
             echo "Directory ${TARGET_DIR} exists"
           else
@@ -49,7 +52,7 @@ jobs:
 
       - name: Terraform Init
         id: init
-        working-directory: ${{ github.event.inputs.target_base_folder_name }}/${{ github.event.inputs.target_folder_name }}
+        working-directory: ${{ env.TARGET_DIR }}
         env:
           ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
           ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
@@ -60,7 +63,7 @@ jobs:
 
       - name: Terraform Plan Destroy
         id: destroy_plan
-        working-directory: ${{ github.event.inputs.target_base_folder_name }}/${{ github.event.inputs.target_folder_name }}
+        working-directory: ${{ env.TARGET_DIR }}
         env:
           ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
           ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
@@ -71,7 +74,7 @@ jobs:
         continue-on-error: true
 
       - name: Terraform Plan Status
-        working-directory: ${{ github.event.inputs.target_base_folder_name }}/${{ github.event.inputs.target_folder_name }}
+        working-directory: ${{ env.TARGET_DIR }}
         id: destroy_status
         if: steps.destroy_plan.outcome == 'failure'
         run: exit 1
@@ -103,6 +106,8 @@ jobs:
 
       - name: Create new branch
         run: |
+          git checkout test_branch_01
+          git pull origin test_branch_01
           git branch
           NEW_BRANCH="${{ github.event.inputs.branch_name }}"
           echo "NEW_BRANCH=${NEW_BRANCH}" >> $GITHUB_ENV
@@ -124,7 +129,6 @@ jobs:
 
       - name: Make changes
         run: |
-          TARGET_DIR="${{ github.event.inputs.target_base_folder_name }}/${{ github.event.inputs.target_folder_name }}"
           git rm -r "${TARGET_DIR}"
           git commit -m "Remove folder ${TARGET_DIR} after destroy"
           echo "Removed folder ${TARGET_DIR} from repository"
