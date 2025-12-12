@@ -90,7 +90,7 @@ jobs:
 
       - name: Terraform Destroy
         id: destroy
-        working-directory: ${{ github.event.inputs.target_base_folder_name }}/${{ github.event.inputs.target_folder_name }}
+        working-directory: ${{ env.TARGET_DIR }}
         env:
           ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
           ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
@@ -140,6 +140,7 @@ jobs:
         run: |
           git checkout test_branch_01
           git pull origin test_branch_01
+          git branch
           git merge --no-ff $NEW_BRANCH -m "Merge $NEW_BRANCH into test_branch_01 [skip ci]"
           git push origin test_branch_01
 
