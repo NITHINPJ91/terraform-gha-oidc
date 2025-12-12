@@ -118,6 +118,9 @@ jobs:
 
       - name: Add .terraform.lock.hcl to test_branch_01
         run: |
+          git checkout test_branch_01
+          git pull origin test_branch_01
+          git branch
           git status
           git add .terraform.lock.hcl
           git commit -m "Add .terraform.lock.hcl to test_branch_01 [skip ci]"
