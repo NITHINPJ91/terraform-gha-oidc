@@ -14,7 +14,7 @@ permissions:
 jobs:
   detect-folder:
     runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch' || (!contains(github.event.head_commit.message, '[skip ci]') && !contains(toLower(github.event.head_commit.message), 'pull request'))
+    if: github.event_name == 'workflow_dispatch' || (!contains(github.event.head_commit.message, '[skip ci]') && !contains(github.event.head_commit.message, 'pull request'))
     outputs:
       folder: ${{ steps.detect.outputs.folder }}
     steps:
