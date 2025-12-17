@@ -8,7 +8,8 @@ on:
 
 jobs:
   merge-main-to-test-branch:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
+    # runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6

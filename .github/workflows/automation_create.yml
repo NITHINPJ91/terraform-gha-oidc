@@ -13,7 +13,8 @@ permissions:
 
 jobs:
   detect-folder:
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
+    # runs-on: ubuntu-latest
     if: github.event_name == 'workflow_dispatch' || (!contains(github.event.head_commit.message, '[skip ci]') && !contains(github.event.head_commit.message, 'pull request'))
     outputs:
       folder: ${{ steps.detect.outputs.folder }}
@@ -43,7 +44,8 @@ jobs:
   infra-deployment:
     needs: detect-folder
     if: needs.detect-folder.outputs.folder != ''
-    runs-on: ubuntu-latest
+    runs-on: self-hosted
+    # runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: ${{ needs.detect-folder.outputs.folder }}
