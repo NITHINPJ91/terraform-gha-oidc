@@ -1,9 +1,13 @@
 name: Infra Deployment Pipeline
 
 on:
-  push:
-    branches:
-      - test_branch_01
+  workflow_run:
+    workflows: [Trigger Automation Create Pipeline]
+    types: [completed]
+    branches: [test_branch_01]
+  # push:
+  #   branches:
+  #     - test_branch_01
   workflow_dispatch:
 
 permissions:
@@ -14,8 +18,9 @@ permissions:
 jobs:
   detect-folder:
     runs-on: self-hosted
-    # runs-on: ubuntu-latest
-    if: github.event_name == 'workflow_dispatch' || (!contains(github.event.head_commit.message, '[skip ci]') && !contains(github.event.head_commit.message, 'pull request'))
+    # runs-on: ubuntu-
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
+    # if: github.event_name == 'workflow_dispatch' || (!contains(github.event.head_commit.message, '[skip ci]') && !contains(github.event.head_commit.message, 'pull request'))
     outputs:
       folder: ${{ steps.detect.outputs.folder }}
     steps:
@@ -125,5 +130,6 @@ jobs:
           git branch
           git status
           git add .terraform.lock.hcl
-          git commit -m "Add .terraform.lock.hcl to test_branch_01 [skip ci]"
+          # git commit -m "Add .terraform.lock.hcl to test_branch_01 [skip ci]"
+          git commit -m "Add .terraform.lock.hcl"
           git push -u origin test_branch_01

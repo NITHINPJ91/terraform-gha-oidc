@@ -142,7 +142,8 @@ jobs:
           git checkout test_branch_01
           git pull origin test_branch_01
           git branch
-          git merge --no-ff $NEW_BRANCH -m "Merge $NEW_BRANCH into test_branch_01 [skip ci]"
+          # git merge --no-ff $NEW_BRANCH -m "Merge $NEW_BRANCH into test_branch_01 [skip ci]"
+          git merge --no-ff $NEW_BRANCH -m "Merge $NEW_BRANCH into test_branch_01"
           git push origin test_branch_01
 
       - name: Delete branch locally and remotely
