@@ -28,7 +28,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
         with:
-          # ref: test_branch_01
+          ref: test_branch_01
           fetch-depth: 2
 
       - name: Detect New Folder
@@ -60,7 +60,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
         with:
-          # ref: test_branch_01
+          ref: test_branch_01
           token: ${{ secrets.GH_PAT }}
 
       - name: Print Working Directory
