@@ -2,6 +2,15 @@ name: Infra Deployment Pipeline
 
 on:
   workflow_call:
+    secrets:
+      GH_PAT:
+        required: true
+      AZURE_CLIENT_ID:
+        required: true
+      AZURE_SUBSCRIPTION_ID:
+        required: true
+      AZURE_TENANT_ID:
+        required: true
   workflow_dispatch:
 
 permissions:
@@ -19,8 +28,8 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
         with:
-          fetch-depth: 2
           ref: test_branch_01
+          fetch-depth: 2
 
       - name: Detect New Folder
         id: detect
@@ -123,6 +132,8 @@ jobs:
           git pull origin test_branch_01
           git branch
           git status
-          git add .terraform.lock.hcl
-          git commit -m "Add .terraform.lock.hcl"
-          git push -u origin test_branch_01
+          if git status --porcelain .terraform.lock.hcl | grep -q "^??"; then
+            git add .terraform.lock.hcl
+            git commit -m "Add .terraform.lock.hcl"
+            git push -u origin test_branch_01
+          fi
