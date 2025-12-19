@@ -28,6 +28,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
         with:
+          ref: test_branch_01
           fetch-depth: 2
 
       - name: Detect New Folder
@@ -59,6 +60,7 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
         with:
+          ref: test_branch_01
           token: ${{ secrets.GH_PAT }}
 
       - name: Print Working Directory
@@ -130,9 +132,8 @@ jobs:
           git pull origin test_branch_01
           git branch
           git status
-          LOCK_FILE="${{ needs.detect-folder.outputs.folder }}/.terraform.lock.hcl"
-          if [ -f "$LOCK_FILE" ]; then
-            git add "$LOCK_FILE"
+          if git status --porcelain .terraform.lock.hcl | grep -q "^??"; then
+            git add .terraform.lock.hcl
             git commit -m "Add .terraform.lock.hcl"
             git push -u origin test_branch_01
           fi
