@@ -150,3 +150,8 @@ jobs:
   call-deployment-pipeline:
     needs: create-and-merge-branch
     uses: ./.github/workflows/automation_create.yml
+    secrets:
+      GH_PAT: ${{ secrets.GH_PAT }}
+      AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+      AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+      AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
