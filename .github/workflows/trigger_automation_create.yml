@@ -144,6 +144,4 @@ jobs:
 
   call-deployment-pipeline:
     needs: create-and-merge-branch
-    runs-on: self-hosted
-    # runs-on: ubuntu-latest
     uses: ./.github/workflows/automation_create.yml
