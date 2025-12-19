@@ -20,8 +20,8 @@ permissions:
 
 jobs:
   detect-folder:
-    runs-on: self-hosted
-    # runs-on: ubuntu-latest
+    # runs-on: self-hosted
+    runs-on: ubuntu-latest
     outputs:
       folder: ${{ steps.detect.outputs.folder }}
     steps:
@@ -51,8 +51,8 @@ jobs:
   infra-deployment:
     needs: detect-folder
     if: needs.detect-folder.outputs.folder != ''
-    runs-on: self-hosted
-    # runs-on: ubuntu-latest
+    # runs-on: self-hosted
+    runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: ${{ needs.detect-folder.outputs.folder }}
