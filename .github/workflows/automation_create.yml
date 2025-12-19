@@ -1,10 +1,7 @@
 name: Infra Deployment Pipeline
 
 on:
-  workflow_run:
-    workflows: [Trigger Automation Create Pipeline]
-    types: [completed]
-    branches: [test_branch_01]
+  workflow_call:
   workflow_dispatch:
 
 permissions:
@@ -16,7 +13,6 @@ jobs:
   detect-folder:
     runs-on: self-hosted
     # runs-on: ubuntu-latest
-    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
     outputs:
       folder: ${{ steps.detect.outputs.folder }}
     steps:
