@@ -115,7 +115,7 @@ jobs:
       - name: Make changes
         run: |
           git add "${TARGET_DIR}"
-          git commit -m "Add new folder ${TARGET_FOLDER} to $NEW_BRANCH"
+          git commit -m "Add new folder ${TARGET_FOLDER}"
 
       - name: Push new branch
         run: git push -u origin $NEW_BRANCH
