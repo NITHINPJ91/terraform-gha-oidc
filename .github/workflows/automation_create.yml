@@ -35,17 +35,29 @@ jobs:
         id: detect
         run: |
           if git rev-parse --verify HEAD~1 >/dev/null 2>&1; then
-            NEW_FOLDER=$(git diff --name-only --diff-filter=A HEAD~1 HEAD | cut -d'/' -f1-2 | sort -u | grep -v '^\.' | head -1)
+            FOLDERS=$(git diff --name-only --diff-filter=A HEAD~1 HEAD | cut -d'/' -f1-2 | sort -u | grep -v '^\.')
           else
-            NEW_FOLDER=$(git ls-tree -r --name-only HEAD | cut -d'/' -f1-2 | sort -u | grep -v '^\.' | head -1)
+            FOLDERS=$(git ls-tree -r --name-only HEAD | cut -d'/' -f1-2 | sort -u | grep -v '^\.')
           fi
+          
+          NEW_FOLDER=""
+          LATEST_TIME=0
+          
+          for FOLDER in $FOLDERS; do
+            [ -z "$FOLDER" ] && continue
+            COMMIT_TIME=$(git log -1 --format=%ct -- "$FOLDER" 2>/dev/null || echo "0")
+            if [ "$COMMIT_TIME" -gt "$LATEST_TIME" ]; then
+              LATEST_TIME=$COMMIT_TIME
+              NEW_FOLDER=$FOLDER
+            fi
+          done
 
           if [ -z "$NEW_FOLDER" ]; then
             echo "folder=" >> $GITHUB_OUTPUT
             echo "No new folder detected"
           else
             echo "folder=$NEW_FOLDER" >> $GITHUB_OUTPUT
-            echo "Detected new folder: $NEW_FOLDER"
+            echo "Detected most recently added folder: $NEW_FOLDER"
           fi
 
   infra-deployment:
