@@ -91,7 +91,7 @@ jobs:
           BACKEND_FILE="${TARGET_DIR}/backend.tf"
           sed -i "s/resource_group_name[[:space:]]*=[[:space:]]*\"\"/resource_group_name = \"${{ github.event.inputs.resource_group_name }}\"/" "${TFVARS_FILE}"
           sed -i "s/location[[:space:]]*=[[:space:]]*\"\"/location = \"${{ github.event.inputs.location }}\"/" "${TFVARS_FILE}"  
-          sed -i "s/key[[:space:]]*=[[:space:]]*\"\"/key = \"${{ github.event.inputs.resource_group_name }}.tfstate\"/" "${BACKEND_FILE}"
+          sed -i "s/key[[:space:]]*=[[:space:]]*\"[^\"]*\"/key = \"${{ github.event.inputs.resource_group_name }}.tfstate\"/" "${BACKEND_FILE}"
           echo "Updated terraform.tfvars with:"
           echo "resource_group_name = \"${{ github.event.inputs.resource_group_name }}\""
           echo "location = \"${{ github.event.inputs.location }}\""
