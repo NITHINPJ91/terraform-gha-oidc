@@ -1,4 +1,4 @@
-name: Trigger Automation Destroy Pipeline
+name: New Trigger Automation Destroy Pipeline
 
 on:
   workflow_dispatch:
