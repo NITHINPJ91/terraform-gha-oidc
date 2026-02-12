@@ -21,9 +21,9 @@ on:
         type: string
 
 permissions:
-  id-token: write
+  # id-token: write
   contents: write
-  issues: write
+  # issues: write
 
 jobs:
   create-and-merge-branch:
