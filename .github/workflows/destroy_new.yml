@@ -19,12 +19,12 @@ on:
 permissions:
   id-token: write
   contents: write
-  issues: write
 
 jobs:
-  destroy-customer-infra:
+  plan-destroy-customer-infra:
     runs-on: self-hosted
-    # runs-on: ubuntu-latest
+    outputs:
+      target_dir: ${{ steps.set_env.outputs.target_dir }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
@@ -33,11 +33,13 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set environment variables
+        id: set_env
         run: |
-          echo "TARGET_DIR=${{ github.event.inputs.target_base_folder_name }}/${{ github.event.inputs.target_folder_name }}" >> $GITHUB_ENV
+          TARGET_DIR="${{ github.event.inputs.target_base_folder_name }}/${{ github.event.inputs.target_folder_name }}"
+          echo "TARGET_DIR=${TARGET_DIR}" >> $GITHUB_ENV
+          echo "target_dir=${TARGET_DIR}" >> $GITHUB_OUTPUT
 
       - name: Check if target directory exists
-        id: check_dir
         run: |
           if [ -d "${TARGET_DIR}" ]; then
             echo "Directory ${TARGET_DIR} exists"
@@ -52,7 +54,6 @@ jobs:
           terraform_version: 1.5.7
 
       - name: Terraform Init
-        id: init
         working-directory: ${{ env.TARGET_DIR }}
         env:
           ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
@@ -63,7 +64,6 @@ jobs:
         run: terraform init
 
       - name: Terraform Plan Destroy
-        id: destroy_plan
         working-directory: ${{ env.TARGET_DIR }}
         env:
           ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
@@ -72,25 +72,36 @@ jobs:
           ARM_USE_OIDC: "true"
           ARM_USE_AZUREAD: "true"
         run: terraform plan -destroy
-        continue-on-error: true
 
-      - name: Terraform Plan Status
-        working-directory: ${{ env.TARGET_DIR }}
-        id: destroy_status
-        if: steps.destroy_plan.outcome == 'failure'
-        run: exit 1
-
-      - name: Await Manual Approval
-        uses: trstringer/manual-approval@v1
+  destroy-customer-infra:
+    runs-on: self-hosted
+    needs: plan-destroy-customer-infra
+    environment: Production
+    env:
+      TARGET_DIR: ${{ needs.plan-destroy-customer-infra.outputs.target_dir }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
         with:
-          secret: ${{ secrets.GITHUB_TOKEN }}
-          approvers: NITHINPJ91
-          minimum-approvals: 1
-          issue-title: "Manual Approval Required for Terraform Apply"
-          issue-body: "Please approve or deny the deployment. Review the terraform plan output above before approving."
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3  
+        with:
+          terraform_version: 1.5.7
+
+      - name: Terraform Init
+        working-directory: ${{ env.TARGET_DIR }}
+        env:
+          ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+          ARM_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+          ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+          ARM_USE_OIDC: "true"
+          ARM_USE_AZUREAD: "true"
+        run: terraform init
 
       - name: Terraform Destroy
-        id: destroy
         working-directory: ${{ env.TARGET_DIR }}
         env:
           ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
