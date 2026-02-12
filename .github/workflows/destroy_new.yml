@@ -71,7 +71,14 @@ jobs:
           ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
           ARM_USE_OIDC: "true"
           ARM_USE_AZUREAD: "true"
-        run: terraform plan -destroy
+        run: terraform plan -destroy -out=destroy.tfplan
+
+      - name: Upload Destroy Plan
+        uses: actions/upload-artifact@v4
+        with:
+          name: destroy-plan
+          path: ${{ env.TARGET_DIR }}/destroy.tfplan
+          retention-days: 1
 
   destroy-customer-infra:
     runs-on: self-hosted
@@ -91,6 +98,12 @@ jobs:
         with:
           terraform_version: 1.5.7
 
+      - name: Download Destroy Plan
+        uses: actions/download-artifact@v4
+        with:
+          name: destroy-plan
+          path: ${{ env.TARGET_DIR }}
+
       - name: Terraform Init
         working-directory: ${{ env.TARGET_DIR }}
         env:
@@ -101,7 +114,7 @@ jobs:
           ARM_USE_AZUREAD: "true"
         run: terraform init
 
-      - name: Terraform Destroy
+      - name: Terraform Apply Destroy Plan
         working-directory: ${{ env.TARGET_DIR }}
         env:
           ARM_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
@@ -109,7 +122,7 @@ jobs:
           ARM_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
           ARM_USE_OIDC: "true"
           ARM_USE_AZUREAD: "true"
-        run: terraform destroy -auto-approve
+        run: terraform apply destroy.tfplan
 
       - name: Set up Git
         run: |
